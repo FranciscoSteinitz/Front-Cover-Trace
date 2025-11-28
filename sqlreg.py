@@ -95,9 +95,10 @@ def update_part_data(connection, nombre_tabla_sql:str, decode_data:dict):
         valores.append(decode_data['SerialNumber'])
         cursor.execute(sql, valores)
         connection.commit()
+    #Error de dato serial no existente
     except mysql.connector.Error as error:
         print(f'Error al actualizar en MYSQL: {error}')
-
+        
 def delete_data(connection, table, query, criteria):
     id_list = search_data(connection, table, query, criteria)
     print(f"ID List Length: {id_list}")

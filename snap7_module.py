@@ -768,38 +768,39 @@ class Plc:
 
         #Estacion solo guarda datos en SQL
         if store:
+            dict_store = self.data_recv
             #Detectar flanco de dato para almacenar del PLC en DB?.DBX?.?
             if self.p_trig(self.read_bit(db_number_incoming, incoming_byte_offset, incoming_bit_offset), incoming_mem_index):
                 #Leer dato de PLC para enviar a MySQL
-                incoming_data = self.client.db_read(db_read, read_start, read_size)
+                store_data = self.client.db_read(db_read, read_start, read_size)
                 print(f"🗣️ Dato recibido desde el PLC")
 
                 #Extraer datos recibidos del PLC y asignar a diccionario interno Recv
-                self.recv_data_operationbits(incoming_data, self.data_recv)  #Remover parametro operacion, ya no es utilixzado por la funcion
-                self.recv_data_NoMachineProd(incoming_data, self.data_recv)
-                self.recv_data_part(incoming_data, self.data_recv)
-                print(f"📥 Dato recibido del PLC para enviar a MySQL: {self.data_recv}")
+                self.recv_data_operationbits(store_data, dict_store)  #Remover parametro operacion, ya no es utilixzado por la funcion
+                self.recv_data_NoMachineProd(store_data, dict_store)
+                self.recv_data_part(store_data, dict_store)
+                print(f"📥 Dato recibido del PLC para registrar en MySQL: {dict_store["SerialNumber"]}")
 
                 #Enviar dato a MySQL
                 if self.sql_connection_status:
 
                     #Buscar dato recibido del plc en MySQL si no existe registro previo de serial number
-                    dato_buscado = sqlreg.search_data(self.sql_conexion, 'front_cover', 'SerialNumber', self.data_recv["SerialNumber"])
+                    dato_buscado = sqlreg.search_data(self.sql_conexion, 'front_cover', 'SerialNumber', dict_store["SerialNumber"])
 
                     if dato_buscado == None or dato_buscado == 3:
                         print("🔍 Dato no registrado en MySQL, procediendo a insertar...")
-                        sqlreg.recv_Data_To_MySQL(self.sql_conexion, 'front_cover', self.data_recv)
+                        sqlreg.recv_Data_To_MySQL(self.sql_conexion, 'front_cover', dict_store)
                         print("✅ Dato insertado en MySQL")
                         #Comprobar insercion
-                        dato_verificado = sqlreg.search_data(self.sql_conexion, 'front_cover', 'SerialNumber', self.data_recv["SerialNumber"])
+                        dato_verificado = sqlreg.search_data(self.sql_conexion, 'front_cover', 'SerialNumber', dict_store["SerialNumber"])
                         if dato_verificado == 1 or dato_verificado == 2:
                             print("✅ Inserción verificada en MySQL")
                         else:
                             print("❌ Error de verificación en MySQL después de inserción")
                         #Borrar dato del diccionario interno Send para proxima lectura
-                        self.data_recv = {key: None for key in self.data_recv}
+                        dict_store = {key: None for key in dict_store}
                         #Borrar dato del bytearray de salida
-                        incoming_data = bytearray(60)
+                        store_data = bytearray(60)
                         #Borrar dato verificado
                         dato_verificado = None
                         #Borrar dato buscado
@@ -808,7 +809,7 @@ class Plc:
                         print("⚠️  Dato ya existente en MySQL, no se inserta registro duplicado")
                 
                 #outgoing_data = b'223145DATA'  # Ejemplo de dato a enviar
-                print(f"Informar al PLC que el dato fue enviado")
+                print(f"Informar al PLC que el dato fue almacenado")
                 self.write_bit(ack_incoming_db_offset, ack_incoming_byte_offset, ack_incoming_bit_offset,True)  # Acknowledge
                 time.sleep(0.1)
                 self.write_bit(ack_incoming_db_offset, ack_incoming_byte_offset, ack_incoming_bit_offset,False) # Reset Acknowledge
@@ -816,14 +817,13 @@ class Plc:
             dict_update = self.data_recv
             #Detectar flanco de dato para actualizar en SQL desde PLC
             if self.p_trig(self.read_bit(db_number_incoming, incoming_byte_offset, incoming_bit_offset), incoming_mem_index):
-                incoming_data = self.client.db_read(db_read, read_start, read_size)
-                print(f"🗣️ Dato recibido desde el PLC para actualizar en MySQL")
+                update_data = self.client.db_read(db_read, read_start, read_size)
                 
                 #Extraer datos recibidos del PLC y asignar a diccionario interno Recv
-                self.recv_data_operationbits(incoming_data, dict_update)
-                self.recv_data_NoMachineProd(incoming_data, dict_update)
-                self.recv_data_part(incoming_data, dict_update)
-                print(f"📥 Dato recibido del PLC para actualizar en MySQL: {dict_update}")
+                self.recv_data_operationbits(update_data, dict_update)
+                self.recv_data_NoMachineProd(update_data, dict_update)
+                self.recv_data_part(update_data, dict_update)
+                print(f"📥 Dato recibido del PLC para actualizar en MySQL: {dict_update["SerialNumber"]}")
 
                 #Actualizar dato en MySQL
                 if self.sql_connection_status:
@@ -833,59 +833,59 @@ class Plc:
                     #Borrar dato del diccionario interno Send para proxima lectura
                     dict_update = {key: None for key in dict_update}
                     #Borrar dato del bytearray de salida
-                    incoming_data = bytearray(60)
+                    update_data = bytearray(60)
 
                 print(f"Informar al PLC que el dato fue actualizado")
                 self.write_bit(ack_incoming_db_offset, ack_incoming_byte_offset, ack_incoming_bit_offset,True)  # Acknowledge
                 time.sleep(0.1)
                 self.write_bit(ack_incoming_db_offset, ack_incoming_byte_offset, ack_incoming_bit_offset,False) # Reset Acknowledge
-            pass
         if search:
+            pass
              #Detectar flanco de dato entrante en DB4.DBX0.2
-            if self.p_trig(self.read_bit(db_number_incoming, incoming_byte_offset, incoming_bit_offset), incoming_mem_index):
-                incoming_data = self.client.db_read(db_read, read_start, read_size)
-                print(f"🗣️ Informar al PLC que el dato fue recibido")
+            # if self.p_trig(self.read_bit(db_number_incoming, incoming_byte_offset, incoming_bit_offset), incoming_mem_index):
+            #     incoming_data = self.client.db_read(db_read, read_start, read_size)
+            #     print(f"🗣️ Informar al PLC que el dato fue recibido")
                 
-                #Extraer datos recibidos del PLC y asignar a diccionario interno Recv
-                self.recv_data_part(incoming_data, self.data_recv)
-                print(f"📥 Dato recibido del PLC: {self.data_recv}")
+            #     #Extraer datos recibidos del PLC y asignar a diccionario interno Recv
+            #     self.recv_data_part(incoming_data, self.data_recv)
+            #     print(f"📥 Dato recibido del PLC: {self.data_recv}")
 
-                #Buscar dato en MySQL si no existe registro previo de serial number
-                if self.sql_connection_status:
+            #     #Buscar dato en MySQL si no existe registro previo de serial number
+            #     if self.sql_connection_status:
                     
-                    dato_buscado = sqlreg.search_data(self.sql_conexion, 'front_cover', 'SerialNumber', self.data_recv["SerialNumber"]) 
-                    print(f"🔍 Resultado de búsqueda en MySQL: {dato_buscado}")
-                    if dato_buscado == 1 or dato_buscado == 2:
-                        print("⚠️  Datos de pieza encontrados en MySQL, obteniendo datos...")
-                        sqlreg.get_Data_From_MySQL(self.sql_conexion, 'front_cover', self.data_recv, self.data_recv["SerialNumber"])
-                        print("✅ Dato obtenido de MySQL")
-                        print("🔄 Procediendo a cargar al PLC")
-                        print(f"📤 Enviando dato al PLC: {self.data_recv}")
-                        send_data = self.send_data_to_PLC(self.data_recv)
-                        print("✅ Dato enviado al PLC")
-                        #Verificar que el dato fue cargado correctamente al PLC
-                        verify_data = bytearray(60)
-                        verify_data = self.client.db_read(db_read, read_start, read_size)
-                        #Comparar dato enviado con dato leido
-                        if verify_data == send_data:
-                            print(f"✅ Dato verificado en PLC: {verify_data.decode('UTF-8')}")
-                            #Borrar fila en MySQL despues de cargar al PLC
-                            sqlreg.delete_data(self.sql_conexion, 'front_cover', 'SerialNumber', self.data_recv["SerialNumber"])
-                            #Borrar dato del diccionario interno Recv para proxima lectura
-                            self.data_recv = {key: None for key in self.data_recv}
-                            #Borrar dato del bytearray de verificacion
-                            verify_data = bytearray(60)
-                            #Borrar dato enviado
-                            send_data = bytearray(60)
-                        else:
-                            print(f"❌ Error de verificación en PLC. Dato leído: {verify_data.decode('UTF-8')}")
-                    if dato_buscado == 3:
-                        print("⚠️  Dato no registrado en MySQL, no se cargan datos al PLC")
+            #         dato_buscado = sqlreg.search_data(self.sql_conexion, 'front_cover', 'SerialNumber', self.data_recv["SerialNumber"]) 
+            #         print(f"🔍 Resultado de búsqueda en MySQL: {dato_buscado}")
+            #         if dato_buscado == 1 or dato_buscado == 2:
+            #             print("⚠️  Datos de pieza encontrados en MySQL, obteniendo datos...")
+            #             sqlreg.get_Data_From_MySQL(self.sql_conexion, 'front_cover', self.data_recv, self.data_recv["SerialNumber"])
+            #             print("✅ Dato obtenido de MySQL")
+            #             print("🔄 Procediendo a cargar al PLC")
+            #             print(f"📤 Enviando dato al PLC: {self.data_recv}")
+            #             send_data = self.send_data_to_PLC(self.data_recv)
+            #             print("✅ Dato enviado al PLC")
+            #             #Verificar que el dato fue cargado correctamente al PLC
+            #             verify_data = bytearray(60)
+            #             verify_data = self.client.db_read(db_read, read_start, read_size)
+            #             #Comparar dato enviado con dato leido
+            #             if verify_data == send_data:
+            #                 print(f"✅ Dato verificado en PLC: {verify_data.decode('UTF-8')}")
+            #                 #Borrar fila en MySQL despues de cargar al PLC
+            #                 sqlreg.delete_data(self.sql_conexion, 'front_cover', 'SerialNumber', self.data_recv["SerialNumber"])
+            #                 #Borrar dato del diccionario interno Recv para proxima lectura
+            #                 self.data_recv = {key: None for key in self.data_recv}
+            #                 #Borrar dato del bytearray de verificacion
+            #                 verify_data = bytearray(60)
+            #                 #Borrar dato enviado
+            #                 send_data = bytearray(60)
+            #             else:
+            #                 print(f"❌ Error de verificación en PLC. Dato leído: {verify_data.decode('UTF-8')}")
+            #         if dato_buscado == 3:
+            #             print("⚠️  Dato no registrado en MySQL, no se cargan datos al PLC")
 
-                #Informar al Plc de dato recibido
-                self.write_bit(ack_incoming_db_offset, ack_incoming_byte_offset, ack_incoming_bit_offset,True)  # Acknowledge
-                time.sleep(0.1)
-                self.write_bit(ack_incoming_db_offset, ack_incoming_byte_offset, ack_incoming_bit_offset,False) # Reset Acknowledge
+            #     #Informar al Plc de dato recibido
+            #     self.write_bit(ack_incoming_db_offset, ack_incoming_byte_offset, ack_incoming_bit_offset,True)  # Acknowledge
+            #     time.sleep(0.1)
+            #     self.write_bit(ack_incoming_db_offset, ack_incoming_byte_offset, ack_incoming_bit_offset,False) # Reset Acknowledge
         if delete:
             pass
 
