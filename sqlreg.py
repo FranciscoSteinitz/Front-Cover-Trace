@@ -132,14 +132,3 @@ def get_Data_From_MySQL(connection, nombre_tabla_sql:str, decode_data:dict, crit
                 decode_data[columna] = result[i]
     except mysql.connector.Error as error:
         print(f'Error al obtener datos de MYSQL: {error}')
-
-#if __name__ == "__main__":
-    #Conectar a la base de datos MySQL
-    #connection = create_server_connection(host_name, user_name, user_password)
-    #create_database(connection, f"CREATE DATABASE IF NOT EXISTS {data_base_name}")
-
-    #show_table_query(connection, "front_cover")    
-    #insert_data(connection, insert_query)
-    #search_data(connection, 'front_cover', 'SerialNumber', '2685100066')
-    #update_data(connection, 'front_cover', 'PartNumberNA', '66534G8', 'SerialNumber', '2234567890')
-    #delete_data(connection, 'front_cover', 'SerialNumber', '2685100034')
