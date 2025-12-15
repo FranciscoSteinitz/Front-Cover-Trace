@@ -1167,7 +1167,7 @@ def station_worker(station_config, plc_config, is_running, is_connected,
 def main():
     """Función principal para pruebas"""
     # Configuración de ejemplo
-    plc_config = ['192.168.0.10', 0, 1, 4, 0, 0, 42, 0]
+    plc_config = ['192.168.0.10', 0, 2, 4, 0, 0, 42, 0]
     sql_config = ["localhost", "root", "acme2019", "plc_data"]
     
     # Validar que podemos serializar la configuración
