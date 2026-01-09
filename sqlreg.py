@@ -1,16 +1,6 @@
 import mysql.connector
 from mysql.connector import Error
 
-#BD (MySQL) parametros de conexion
-# host_name = "localhost"
-# user_name = "root" 
-# user_password = "paco"
-# data_base_name = "plc_data"
-
-#Data queries
-# insert_query = """INSERT INTO front_cover (SerialNumber) 
-# VALUES ('2234567830')"""
-
 def create_server_connection(host_name, user_name, user_password):
     connection = None
     try:
@@ -33,15 +23,26 @@ def create_database(connection, query,dbname:str):
     except Error as err:
         print(f"Error: '{err}'")
 
-def show_table_query(connection, query):
+def show_table_query(host_name, user_name, user_password, data_base_name, table_name):
+    
+    connection = create_server_connection(host_name, user_name, user_password)
+    print(connection)
+    create_database_query = f"CREATE DATABASE IF NOT EXISTS {data_base_name}"
+    create_database(connection, create_database_query, data_base_name)
+
     cursor = connection.cursor()
     try:
-        cursor.execute(f"DESCRIBE {query}")
-        result = cursor.fetchall()
-        for row in result:
-            print(row)
+        cursor.execute(f"SELECT * FROM {table_name}")
+        result = cursor.fetchall() #  Contiene todas las filas de la tabla, lista de tuplas
+        # Imprime todas las filas de la tabla de forma legible, se puede comentar
+        #for row in result:
+            #print(row)
+        connection.close()
     except Error as err:
+        connection.close()
+        result = err
         print(f"Error: '{err}'")
+    return result
 
 def insert_data(connection, query):
     cursor = connection.cursor()
@@ -132,3 +133,17 @@ def get_Data_From_MySQL(connection, nombre_tabla_sql:str, decode_data:dict, crit
                 decode_data[columna] = result[i]
     except mysql.connector.Error as error:
         print(f'Error al obtener datos de MYSQL: {error}')
+
+# if __name__ == "__main__":
+#     #Parametros de conexion
+#     host_name = "localhost"
+#     user_name = "root"
+#     user_password = "acme2019"
+#     data_base_name = "plc_data"
+#     nombre_tabla_sql = "front_cover"
+
+#     #Mostrar tabla con conexion y desconexion dentro de la funcion, la funcion retorna el resultado en forma de lista de tuplas
+#     print(show_table_query(host_name, user_name, user_password, data_base_name, nombre_tabla_sql))
+
+
+
